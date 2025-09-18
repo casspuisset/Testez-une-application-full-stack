@@ -1,7 +1,9 @@
 # Yoga App !
 
+## For run tests and generate the jacoco code coverage:
 
-For launch and generate the jacoco code coverage:
-> mvn clean test
+> mvn test
 
-GL
+## To check the jacoco report for code coverage:
+
+> /target/site/jacoco/index.html
