@@ -12,6 +12,7 @@ import { MeComponent } from './me.component';
 import { Router } from '@angular/router';
 import { UserService } from 'src/app/services/user.service';
 import { User } from 'src/app/interfaces/user.interface';
+import { of } from 'rxjs';
 
 describe('MeComponent', () => {
   let component: MeComponent;
@@ -70,10 +71,10 @@ describe('MeComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  // it('should load user data on init', () => {
-  //   expect(mockUserService.getById).toHaveBeenCalledWith('1');
-  //   expect(component.user).toEqual(mockUser);
-  // });
+  it('should load user data on init', () => {
+    expect(mockUserService.getById).toHaveBeenCalledWith(mockUser.id);
+    expect(component.user).toEqual(mockUser);
+  });
 
   it('should navigate back when back is called', () => {
     const spyBack = jest
@@ -85,16 +86,19 @@ describe('MeComponent', () => {
     spyBack.mockRestore();
   });
 
-  // it('should delete user account when delete is called', () => {
-  //   component.delete();
+  it('should delete user account when delete is called', () => {
+    mockComponent.delete();
+    mockUserService.delete.mockReturnValue(
+      of(
+        mockMatSnackBar.open('Your account has been deleted !'),
+        mockRouter.navigate(['/'])
+      )
+    );
 
-  //   expect(mockUserService.delete).toHaveBeenCalledWith('1');
-  //   expect(mockMatSnackBar.open).toHaveBeenCalledWith(
-  //     'Your account has been deleted !',
-  //     'Close',
-  //     { duration: 3000 }
-  //   );
-  //   // expect(mockSessionService.logOut).toHaveBeenCalled();
-  //   expect(mockRouter.navigate).toHaveBeenCalledWith(['/']);
-  // });
+    expect(mockUserService.delete).toHaveBeenCalledWith(mockUser.id);
+    expect(mockMatSnackBar.open).toHaveBeenCalledWith(
+      'Your account has been deleted !'
+    );
+    expect(mockRouter.navigate).toHaveBeenCalledWith(['/']);
+  });
 });

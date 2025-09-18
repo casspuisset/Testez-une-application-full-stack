@@ -18,6 +18,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TeacherService } from 'src/app/services/teacher.service';
 import { Session } from '../../interfaces/session.interface';
 import { of } from 'rxjs';
+import { Teacher } from 'src/app/interfaces/teacher.interface';
+import { HttpTestingController } from '@angular/common/http/testing';
 
 describe('FormComponent', () => {
   let component: FormComponent;
@@ -26,6 +28,7 @@ describe('FormComponent', () => {
   let mockFormBuilder: FormBuilder = new FormBuilder();
   let mockMatSnackBar: any = { open: jest.fn() };
   let mockSessionApiService: any = {
+    detail: jest.fn(),
     create: jest.fn().mockReturnValue({ subscribe: jest.fn() }),
     update: jest.fn().mockReturnValue(of({})),
   };
@@ -33,7 +36,16 @@ describe('FormComponent', () => {
   let mockRouter: any = {
     navigate: jest.fn(),
   };
-
+  let mockSession: Session = {
+    id: 1,
+    name: 'Name',
+    description: 'Description',
+    date: new Date(),
+    teacher_id: 1,
+    users: [],
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
   const mockSessionService = {
     sessionInformation: {
       admin: true,
@@ -82,18 +94,19 @@ describe('FormComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  it('should create a session when the form is correctly filled', () => {
-    let mockSession: Session = {
-      id: 1,
-      name: 'Name',
-      description: 'Description',
-      date: new Date(),
-      teacher_id: 1,
-      users: [],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    };
+  it('should  navigate to /sessions if not admin', () => {
+    mockSessionService.sessionInformation.admin = false;
+    // mockRouter.url = '/sessions/create';
+    // jest
+    //   .spyOn(component as unknown as { initForm: () => void }, 'initForm')
+    //   .mockImplementation(() => {});
+    // component.ngOnInit();
+    mockComponent.ngOnInit();
 
+    expect(mockRouter.navigate).toHaveBeenCalledWith(['sessions']);
+  });
+
+  it('should create a session when the form is correctly filled', () => {
     let form = mockComponent.sessionForm?.setValue(mockSession);
     mockComponent.onUpdate = false;
     mockComponent.submit();

@@ -28,7 +28,7 @@ describe('DetailComponent', () => {
   let mockSessionApiService: any = {
     delete: jest.fn().mockReturnValue({ subscribe: jest.fn() }),
     participate: jest.fn().mockReturnValue({ subscribe: jest.fn() }),
-    unparticipate: jest.fn().mockReturnValue({ subscribe: jest.fn() }),
+    unParticipate: jest.fn().mockReturnValue({ subscribe: jest.fn() }),
     detail: jest.fn().mockReturnValue({ subscribe: jest.fn() }),
   };
 
@@ -133,6 +133,38 @@ describe('DetailComponent', () => {
   //   ///à voir ce qui coince
   //   expect(mockSessionApiService.detail).toHaveBeenCalledWith(sessionId);
   // });
+  it('should participate in the session and fetch the session again', () => {
+    mockSessionApiService.participate.mockReturnValue(of());
+
+    component.sessionId = sessionId;
+    component.userId = '2';
+
+    component.participate();
+
+    expect(mockSessionApiService.participate).toHaveBeenCalledWith(
+      sessionId,
+      '1'
+    );
+  });
+
+  it('should fetch the session and call teacher service with it', () => {
+    // mockTeacherService.mockReturnValue(
+    //   of((mockComponent.teacher = mockTeacher))
+    // );
+    mockSessionApiService.fetchSession();
+    mockSessionApiService.detail.mockReturnValue(
+      of(
+        (mockComponent.session = mockSession),
+        (mockComponent.isParticipate = true),
+        mockTeacher
+      )
+    );
+
+    expect(mockSessionApiService).toHaveBeenCalledWith(sessionId);
+    expect(mockTeacherService).toHaveBeenCalled();
+    expect(mockComponent.session).toHaveBeenCalledWith(mockSession);
+    expect(mockComponent.isParticipate).toHaveBeenCalledWith(true);
+  });
 
   it('should render the delete button if user is an admin', () => {
     mockComponent.isAdmin = true;
