@@ -15,25 +15,39 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { expect } from '@jest/globals';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 let component: FormComponent;
 let fixture: ComponentFixture<FormComponent>;
 
-const mockSessionService = {
+let mockSessionService = {
   sessionInformation: {
     admin: true,
     id: '1',
   },
 };
 
-const mockTeacherService = {
+let mockRouter = {
+  navigate: jest.fn(),
+  url: '',
+  navigateByUrl: jest.fn(),
+};
+
+let mockActivatedRoute = {
+  snapshot: {
+    paramMap: {
+      get: jest.fn(),
+    },
+  },
+};
+
+let mockTeacherService = {
   all: jest
     .fn()
     .mockReturnValue(of([{ id: '1', firstName: 'Test', lastName: 'TEST' }])),
 };
 
-const mockSessionApiService = {
+let mockSessionApiService = {
   detail: jest.fn().mockReturnValue(
     of({
       id: '1',
@@ -69,6 +83,8 @@ describe('FormComponent', () => {
         { provide: SessionService, useValue: mockSessionService },
         { provide: TeacherService, useValue: mockTeacherService },
         { provide: SessionApiService, useValue: mockSessionApiService },
+        { provide: Router, useValue: mockRouter },
+        { provide: ActivatedRoute, useValue: mockActivatedRoute },
       ],
     }).compileComponents();
 
@@ -82,8 +98,11 @@ describe('FormComponent', () => {
   });
 
   //tests
-  it('should create', () => {
+  it('should create or redirect if user is not an admin', () => {
     expect(component).toBeTruthy();
+    mockSessionService.sessionInformation.admin = false;
+    fixture.detectChanges();
+    expect(router).toHaveBeenCalled;
   });
 
   it('should display a form to create a session', () => {
@@ -91,17 +110,6 @@ describe('FormComponent', () => {
 
     expect(integrated.querySelector('h1').textContent).toContain(
       'Create session'
-    );
-    expect(integrated.querySelector('form')).toBeTruthy();
-  }); ///i
-
-  it('should display a form to update a session', () => {
-    component.onUpdate = true;
-    fixture.detectChanges();
-    let integrated = fixture.nativeElement;
-
-    expect(integrated.querySelector('h1').textContent).toContain(
-      'Update session'
     );
     expect(integrated.querySelector('form')).toBeTruthy();
   }); ///i
@@ -127,6 +135,29 @@ describe('FormComponent', () => {
       teacher_id: '1',
       description: 'New description.',
     });
+  }); ///i
+
+  it('should set onUpdateon true when url contain update', () => {
+    mockRouter.url = 'sessions/update/1';
+    mockActivatedRoute.snapshot.paramMap.get.mockReturnValue('1');
+
+    fixture = TestBed.createComponent(FormComponent);
+    component = fixture.componentInstance;
+    fixture.detectChanges();
+
+    expect(component.onUpdate).toBe(true);
+    expect(mockSessionApiService.detail).toHaveBeenCalledWith('1');
+  });
+
+  it('should display a form to update a session', () => {
+    component.onUpdate = true;
+    fixture.detectChanges();
+    let integrated = fixture.nativeElement;
+
+    expect(integrated.querySelector('h1').textContent).toContain(
+      'Update session'
+    );
+    expect(integrated.querySelector('form')).toBeTruthy();
   }); ///i
 
   it('should submit the form and update a session when update submit is clicked on update form', () => {

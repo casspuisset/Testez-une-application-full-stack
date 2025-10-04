@@ -21,6 +21,7 @@ describe('UserService', () => {
     createdAt: '2025-09-01T19:34:14',
     updatedAt: '2025-09-01T19:34:14',
   };
+
   beforeEach(() => {
     TestBed.configureTestingModule({
       imports: [HttpClientModule, HttpClientTestingModule],
@@ -31,10 +32,6 @@ describe('UserService', () => {
     controller = TestBed.inject(HttpTestingController);
   });
 
-  // afterEach(() => {
-  //   controller.verify();
-  // });
-
   it('should be created', () => {
     expect(service).toBeTruthy();
   });
@@ -43,9 +40,11 @@ describe('UserService', () => {
     service.getById('1').subscribe((user) => {
       expect(user).toEqual(mockUser);
     });
-    // const req = controller.expectOne('/api/user/1');
-    // expect(req.request.method).toEqual('GET');
   });
 
-  it('should delete a user when delete is called', () => {});
+  it('should delete a user when delete is called', () => {
+    service.delete('1').subscribe((response) => {
+      expect(response).toBeNull();
+    });
+  });
 });

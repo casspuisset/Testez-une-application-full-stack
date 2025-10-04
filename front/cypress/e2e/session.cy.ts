@@ -1,6 +1,11 @@
 /// <reference types="cypress" />
 /// <reference path="../support/index.d.ts"/>
 describe('Login', () => {
+  it('should redirect to login if not logged on secured page', () => {
+    cy.visit('/sessions/create');
+    cy.url().should('include', '/login');
+  });
+
   it('should login and display user information', () => {
     cy.login();
 
@@ -106,6 +111,10 @@ describe('Account', () => {
   });
 
   it('should return back and delete when respectives buttons are clicked', () => {
+    cy.intercept('DELETE', 'http://localhost:4200/api/user/2', {
+      statusCode: 200,
+      body: {},
+    }).as('UserDeleteRequest');
     cy.intercept('GET', 'http://localhost:4200/api/user/2', {
       statusCode: 200,
       body: {
@@ -133,39 +142,12 @@ describe('Account', () => {
     cy.get('button[mat-raised-button][color="warn"]')
       .contains('Detail')
       .click();
-
+    cy.wait('@UserDeleteRequest');
     cy.url().should('include', '/');
   });
 });
 
 describe('Session', () => {
-  it('should login and display user information', () => {
-    cy.intercept('GET', 'http://localhost:4200/api/session', {
-      statusCode: 200,
-      body: [
-        {
-          id: 1,
-          name: 'premier test',
-          date: '2025-09-01T00:00:00.000+00:00',
-          teacher_id: 2,
-          description: 'première session créée et éditée',
-          users: [2],
-          createdAt: '2025-09-02T17:32:28',
-          updatedAt: '2025-09-02T17:32:40',
-        },
-      ],
-    }).as('SessionInfoRequest');
-
-    cy.login();
-
-    cy.wait('@SessionInfoRequest');
-
-    cy.contains('premier test').should('be.visible');
-    cy.contains('première session créée et éditée').should('be.visible');
-
-    cy.url().should('include', '/sessions');
-  });
-
   it('should login and create a session', () => {
     cy.intercept('POST', 'http://localhost:4200/api/session', {
       statusCode: 200,
@@ -313,7 +295,69 @@ describe('Session', () => {
     cy.url().should('include', '/sessions');
   });
 
-  it('should login and show session details, then return to home page with back arrow', () => {
+  it('should login and show session details, participate then return to home page with back arrow', () => {
+    cy.intercept('GET', 'http://localhost:4200/api/session/*', {
+      statusCode: 200,
+      body: {
+        id: 1,
+        name: 'premier test',
+        date: '2025-09-01T00:00:00.000+00:00',
+        teacher_id: 2,
+        description: 'première session créée et éditée',
+        users: [1],
+        createdAt: '2025-09-02T17:32:28',
+        updatedAt: '2025-09-02T17:32:40',
+      },
+    }).as('SessionGetRequest');
+
+    cy.intercept('GET', 'http://localhost:4200/api/session', {
+      statusCode: 200,
+      body: [
+        {
+          id: 1,
+          name: 'premier test',
+          date: '2025-09-01T00:00:00.000+00:00',
+          teacher_id: 2,
+          description: 'première session créée et éditée',
+          users: [1],
+          createdAt: '2025-09-02T17:32:28',
+          updatedAt: '2025-09-02T17:32:40',
+        },
+      ],
+    }).as('SessionListRequest');
+
+    cy.intercept('GET', 'http://localhost:4200/api/teacher/*', {
+      statusCode: 200,
+      body: {
+        id: 2,
+        lastName: 'THIERCELIN',
+        firstName: 'Hélène',
+        createdAt: '2025-09-01T19:34:13',
+        updatedAt: '2025-09-01T19:34:13',
+      },
+    }).as('TeacherInfoRequest');
+
+    cy.loginNonAdmin();
+
+    cy.wait('@SessionListRequest');
+
+    cy.contains('Detail').click();
+
+    cy.wait('@SessionGetRequest');
+    cy.wait('@TeacherInfoRequest');
+
+    cy.contains('Premier Test').should('be.visible');
+    cy.contains('première session créée et éditée').should('be.visible');
+    cy.contains('THIERCELIN').should('be.visible');
+    cy.contains('Hélène').should('be.visible');
+    cy.get('button[mat-raised-button][color="primary"]')
+      .contains('Participate')
+      .click();
+    cy.url().should('include', '/sessions/detail/1');
+    cy.get('mat-icon').contains('arrow_back').should('be.visible').click();
+    cy.url().should('include', '/sessions');
+  });
+  it('should unparticipate', () => {
     cy.intercept('GET', 'http://localhost:4200/api/session/*', {
       statusCode: 200,
       body: {
@@ -337,7 +381,7 @@ describe('Session', () => {
           date: '2025-09-01T00:00:00.000+00:00',
           teacher_id: 2,
           description: 'première session créée et éditée',
-          users: [2],
+          users: [1],
           createdAt: '2025-09-02T17:32:28',
           updatedAt: '2025-09-02T17:32:40',
         },
@@ -355,7 +399,7 @@ describe('Session', () => {
       },
     }).as('TeacherInfoRequest');
 
-    cy.login();
+    cy.loginNonAdmin();
 
     cy.wait('@SessionListRequest');
 
@@ -364,14 +408,9 @@ describe('Session', () => {
     cy.wait('@SessionGetRequest');
     cy.wait('@TeacherInfoRequest');
 
-    cy.contains('Premier Test').should('be.visible');
-    cy.contains('première session créée et éditée').should('be.visible');
-    cy.contains('THIERCELIN').should('be.visible');
-    cy.contains('Hélène').should('be.visible');
-
-    cy.url().should('include', '/sessions/detail/1');
-    cy.get('mat-icon').contains('arrow_back').should('be.visible').click();
-    cy.url().should('include', '/sessions');
+    cy.get('button[mat-raised-button][color="warn"]')
+      .contains('Do not participate')
+      .click();
   });
 
   it('should login and delete a session', () => {
