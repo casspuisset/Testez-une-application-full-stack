@@ -108,6 +108,21 @@ describe('DetailComponent', () => {
     );
   }); ///i
 
+  it('should unparticipate in the session when unparticipate button is clicked', () => {
+    component.isParticipate = true;
+    fixture.detectChanges();
+
+    const unparticipateButton = fixture.nativeElement.querySelector(
+      'button[color="warn"]'
+    );
+    unparticipateButton.click();
+
+    expect(mockSessionApiService.unParticipate).toHaveBeenCalledWith(
+      'mockCall',
+      '1'
+    );
+  }); ///i
+
   it('should delete the session and navigate when delete button is clicked', () => {
     component.isAdmin = true;
     fixture.detectChanges();
