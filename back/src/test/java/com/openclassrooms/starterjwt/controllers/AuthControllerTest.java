@@ -24,6 +24,9 @@ import java.util.Optional;
 import org.springframework.security.core.Authentication;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -126,7 +129,28 @@ public class AuthControllerTest {
     }
 
     @Test
-    void registerUser_ShouldReturnOkWithMessageWhenRegisterRequestIsValid() {
+    void authenticateUser_ShouldLetIsAdminAsFalseIfUserIsNull() {
+        LoginRequest loginRequest = new LoginRequest();
+        loginRequest.setEmail("test@test.com");
+        loginRequest.setPassword("password");
+
+        UserDetailsImpl userDetails = new UserDetailsImpl(1L, "test@test.com", "Test", "TEST", true, "password");
+
+        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
+                .thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(userDetails);
+        when(jwtUtils.generateJwtToken(authentication)).thenReturn("token");
+        when(userRepository.findByEmail("test@test.com")).thenReturn(Optional.empty());
+
+        ResponseEntity<?> response = authController.authenticateUser(loginRequest);
+
+        assertEquals(200, response.getStatusCodeValue());
+        JwtResponse bodyResponse = (JwtResponse) response.getBody();
+        assertFalse(bodyResponse.getAdmin());
+    }
+
+    @Test
+    void registerUser_ShouldReturnOkWithMessageWhenRegisterRequestIsValid_AndBadRequestWhenEmailIsAlreadyUsed() {
         when(userRepository.existsByEmail(signupRequest.getEmail())).thenReturn(false);
         when(passwordEncoder.encode(signupRequest.getPassword())).thenReturn("password");
         when(userRepository.save(any(User.class))).thenReturn(user);

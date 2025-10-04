@@ -24,7 +24,7 @@ public class UserServiceTest {
     private UserService userService;
 
     @Test
-    void findById_ShouldReturnUserIfIdExists() {
+    void findById_ShouldReturnUserIfIdExists_AndNullIfIdDoesNotExist() {
 
         User user = new User();
         user.setId(1L);
@@ -36,17 +36,14 @@ public class UserServiceTest {
         assertNotNull(returnedUser);
         assertEquals(user, returnedUser);
         verify(userRepository).findById(1L);
-    }
 
-    @Test
-    void findById_ShouldReturnNullIfIdDoesNotExist() {
+        // case Id does not exist
+        when(userRepository.findById(2L)).thenReturn(Optional.empty());
 
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        User notFoundUser = userService.findById(2L);
 
-        User userActual = userService.findById(1L);
-
-        assertNull(userActual);
-        verify(userRepository).findById(1L);
+        assertNull(notFoundUser);
+        verify(userRepository).findById(2L);
     }
 
     @Test

@@ -32,14 +32,13 @@ public class TeacherControllerTest {
     private TeacherController teacherController;
 
     @Test
-    void findById_ShouldReturnTeacherWhenTeacherExists() {
-        Long teacherId = 1L;
+    void findById_ShouldReturnTeacherWhenTeacherExists_AndEmptyIfNoTeacherIsFound_AndBadRequestWhenIdIsNotValid() {
         Teacher teacher = new Teacher();
         TeacherDto teacherDto = new TeacherDto();
-        teacher.setId(teacherId);
-        teacherDto.setId(teacherId);
+        teacher.setId(1L);
+        teacherDto.setId(1L);
 
-        when(teacherService.findById(teacherId)).thenReturn(teacher);
+        when(teacherService.findById(1L)).thenReturn(teacher);
         when(teacherMapper.toDto(teacher)).thenReturn(teacherDto);
 
         ResponseEntity<?> response = teacherController.findById("1");
@@ -47,29 +46,25 @@ public class TeacherControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(teacherDto, response.getBody());
-        verify(teacherService).findById(teacherId);
+        verify(teacherService).findById(1L);
         verify(teacherMapper).toDto(teacher);
-    }
 
-    @Test
-    void findById_ShouldReturnEmptyRequestWhenNoTeacherIsFound() {
-        Long teacherId = 1L;
+        // case no teacher
 
-        when(teacherService.findById(teacherId)).thenReturn(null);
+        when(teacherService.findById(2L)).thenReturn(null);
 
-        ResponseEntity<?> response = teacherController.findById("1");
+        ResponseEntity<?> notFoundResponse = teacherController.findById("2");
 
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        assertNull(response.getBody());
-        verify(teacherService).findById(teacherId);
-    }
+        assertEquals(HttpStatus.NOT_FOUND, notFoundResponse.getStatusCode());
+        assertNull(notFoundResponse.getBody());
+        verify(teacherService).findById(2L);
 
-    @Test
-    void findById_ShouldReturnBadRequestWhenIdIsNotValid() {
-        ResponseEntity<?> response = teacherController.findById(" ");
+        // case invalid Id
 
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNull(response.getBody());
+        ResponseEntity<?> invalidResponse = teacherController.findById(" ");
+
+        assertEquals(HttpStatus.BAD_REQUEST, invalidResponse.getStatusCode());
+        assertNull(invalidResponse.getBody());
     }
 
     @Test

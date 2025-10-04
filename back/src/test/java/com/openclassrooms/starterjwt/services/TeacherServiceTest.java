@@ -26,7 +26,7 @@ public class TeacherServiceTest {
     private TeacherService teacherService;
 
     @Test
-    void findById_ExistingTeacher_ReturnsTeacher() {
+    void findById_ShouldReturnTeacherWithCorrectId_AndNullIfTeacherDoesNotExist() {
         Teacher teacher = new Teacher();
         teacher.setId(1L);
 
@@ -36,15 +36,13 @@ public class TeacherServiceTest {
 
         assertEquals(teacher, returnedTeacher);
         verify(teacherRepository).findById(1L);
-    }
 
-    @Test
-    void findById_ShouldReturnNullIfTeacherDoesNotExist() {
-        when(teacherRepository.findById(1L)).thenReturn(Optional.empty());
+        // case teacher does not exist
+        when(teacherRepository.findById(2L)).thenReturn(Optional.empty());
 
-        Teacher teacher = teacherService.findById(1L);
+        Teacher notTeacher = teacherService.findById(2L);
 
-        assertNull(teacher);
+        assertNull(notTeacher);
     }
 
     @Test

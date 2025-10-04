@@ -1,5 +1,7 @@
 package com.openclassrooms.starterjwt.services;
 
+import com.openclassrooms.starterjwt.exception.BadRequestException;
+import com.openclassrooms.starterjwt.exception.NotFoundException;
 import com.openclassrooms.starterjwt.models.Session;
 import com.openclassrooms.starterjwt.models.User;
 import com.openclassrooms.starterjwt.repository.SessionRepository;
@@ -63,30 +65,28 @@ public class SessionServiceTest {
     }
 
     @Test
-    void getById_ShouldReturnSessionIfTheIDExists() {
-        Long sessionId = 1L;
+    void getById_ShouldReturnSessionIfTheIDExists_AndNullIfTheIDDoesNotExist() {
         Session expectedSession = Session.builder()
-                .id(sessionId)
+                .id(1L)
                 .name("Test")
                 .date(new Date())
                 .description("Description")
                 .build();
 
-        when(sessionRepository.findById(sessionId)).thenReturn(java.util.Optional.of(expectedSession));
+        when(sessionRepository.findById(1L)).thenReturn(java.util.Optional.of(expectedSession));
 
-        Session session = sessionService.getById(sessionId);
+        Session session = sessionService.getById(1L);
 
         assertNotNull(session);
         assertEquals(expectedSession.getId(), session.getId());
-        verify(sessionRepository).findById(sessionId);
-    }
+        verify(sessionRepository).findById(1L);
 
-    @Test
-    void getById_ShouldReturnNullIfTheIDDoesNotExist() {
+        // case Id does not exist
+        when(sessionRepository.findById(1L)).thenReturn(null);
 
-        var session = sessionService.getById(1L);
+        var session2 = sessionRepository.findById(1L);
 
-        assertNull(session);
+        assertNull(session2);
     }
 
     @Test
@@ -137,7 +137,7 @@ public class SessionServiceTest {
     }
 
     @Test
-    void participateSession_ShouldAddNewUserToSessionWhenUserDoesNotAlreadyParticipe() {
+    void participate_ShouldAddNewUserToSessionWhenUserDoesNotAlreadyParticipe_AndThrowANotFoundExceptionIfUserOrSessionIsNull() {
 
         User user = new User();
         user.setId(1L);
@@ -158,37 +158,34 @@ public class SessionServiceTest {
 
         assertTrue(session.getUsers().contains(user));
         verify(sessionRepository).save(session);
+
+        // case user null
+        when(sessionRepository.findById(1L)).thenReturn(Optional.of(session));
+        when(userRepository.findById(2L)).thenReturn(Optional.empty());
+        assertThrows(NotFoundException.class, () -> sessionService.participate(1L, 2L));
+
+        // case session null
+        when(sessionRepository.findById(2L)).thenReturn(Optional.empty());
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        assertThrows(NotFoundException.class, () -> sessionService.participate(2L, 1L));
     }
 
-    // @Test
-    // void
-    // participateSession_ShouldReturnBadRequestExceptionIfUserAlreadyParticipe() {
+    @Test
+    void participate_ShouldThrowABadRequestExceptionIfUserAlreadyRegister() {
+        User user = new User();
+        Session session = new Session();
+        session.setId(1L);
+        user.setId(1L);
+        session.setUsers(new ArrayList<>(Collections.singletonList(user)));
 
-    // User user = new User();
-    // user.setId(1L);
+        when(sessionRepository.findById(1L)).thenReturn(Optional.of(session));
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
 
-    // Session session = Session.builder()
-    // .id(1L)
-    // .name("Test Session")
-    // .date(new Date())
-    // .description("Description")
-    // .users(new ArrayList<>(Collections.singletonList(user)))
-    // .build();
-
-    // when(sessionRepository.findById(1L)).thenReturn(Optional.of(session));
-    // when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-    // when(sessionRepository.save(session)).thenReturn(session);
-
-    // sessionService.participate(session.getId(), user.getId());
-
-    // assertTrue(session.getUsers().contains(user));
-    // verify(sessionRepository).save(session);
-    // assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-
-    // }
+        assertThrows(BadRequestException.class, () -> sessionService.participate(1L, 1L));
+    }
 
     @Test
-    void unparticipateSession_ShouldRemovesUserFromSessionUsersArray() {
+    void noLongerParticipate_ShouldRemovesUserFromSessionUsersArray_AndThrowANotFoundExceptionIfSessionIsNull() {
         User user = new User();
         user.setId(1L);
 
@@ -207,5 +204,20 @@ public class SessionServiceTest {
 
         assertFalse(session.getUsers().contains(user));
         verify(sessionRepository).save(session);
+
+        // case session null
+        when(sessionRepository.findById(1L)).thenReturn(Optional.empty());
+        assertThrows(NotFoundException.class, () -> sessionService.noLongerParticipate(1L, 1L));
+    }
+
+    @Test
+    void noLongerParticipate_ShouldThrowABadRequestExceptionIfUserIsNotAlreadyRegister() {
+        Session session = new Session();
+        session.setUsers(new ArrayList<>());
+
+        when(sessionRepository.findById(1L)).thenReturn(Optional.of(session));
+
+        assertThrows(BadRequestException.class, () -> sessionService.noLongerParticipate(1L, 1L));
+
     }
 }

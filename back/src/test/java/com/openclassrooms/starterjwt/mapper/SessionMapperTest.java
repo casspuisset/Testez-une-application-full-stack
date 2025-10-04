@@ -30,7 +30,7 @@ public class SessionMapperTest {
     private SessionMapper sessionMapper;
 
     @Test
-    void toEntity_ShouldReturnEntityWhenDtoIsValid() {
+    void toEntity_ShouldReturnEntityWhenDtoIsValid_AndNullWhenSessionIsNull() {
         SessionDto sessionDto = new SessionDto();
         User user = new User();
         User user2 = new User();
@@ -53,25 +53,14 @@ public class SessionMapperTest {
         assertEquals(2, session.getUsers().size());
         assertTrue(session.getUsers().contains(user));
         assertTrue(session.getUsers().contains(user2));
+
+        // case session null
+        session = sessionMapper.toEntity((SessionDto) null);
+        assertNull(session);
     }
 
     @Test
-    void toDto_ShouldReturnDtoWhenEntityIsValid() {
-        Session session = new Session();
-        session.setDescription("Description");
-        session.setId(1L);
-        session.setTeacher(new Teacher());
-        session.setUsers(Arrays.asList(new User(), new User()));
-
-        SessionDto dto = sessionMapper.toDto(session);
-
-        assertEquals("Description", dto.getDescription());
-        assertEquals(1L, dto.getId());
-        assertEquals(2, dto.getUsers().size());
-    }
-
-    @Test
-    void toEntity_ShouldReturnEntityListWhenDtoIsAValidList() {
+    void toEntity_ShouldReturnEntityListWhenDtoIsAValidList_AndNullifListIsNull() {
         SessionDto dto = new SessionDto();
         SessionDto dto2 = new SessionDto();
         Teacher teacher = new Teacher();
@@ -106,10 +95,29 @@ public class SessionMapperTest {
         assertEquals(teacher2, entityList.get(1).getTeacher());
         assertEquals(2, entityList.get(0).getUsers().size());
         assertEquals(2, entityList.get(1).getUsers().size());
+
+        // case list null
+        entityList = sessionMapper.toEntity((List<SessionDto>) null);
+        assertNull(entityList);
     }
 
     @Test
-    void toDto_ShouldReturnDtoListWhenEntityIsAValidList() {
+    void toDto_ShouldReturnDtoWhenEntityIsValid() {
+        Session session = new Session();
+        session.setDescription("Description");
+        session.setId(1L);
+        session.setTeacher(new Teacher());
+        session.setUsers(Arrays.asList(new User(), new User()));
+
+        SessionDto dto = sessionMapper.toDto(session);
+
+        assertEquals("Description", dto.getDescription());
+        assertEquals(1L, dto.getId());
+        assertEquals(2, dto.getUsers().size());
+    }
+
+    @Test
+    void toDto_ShouldReturnDtoListWhenEntityIsAValidList_AndNullWhenListOrSessionIsNull() {
         Session session = new Session();
         Session session2 = new Session();
 
@@ -131,33 +139,26 @@ public class SessionMapperTest {
         assertEquals("Description 2", dtoList.get(1).getDescription());
         assertEquals(2, dtoList.get(0).getUsers().size());
         assertEquals(2, dtoList.get(1).getUsers().size());
-    }
 
-    @Test
-    void toEntity_ShouldReturnNullWhenSessionDtoIsNull() {
-        Session session = sessionMapper.toEntity((SessionDto) null);
-
-        assertNull(session);
-    }
-
-    @Test
-    void toDto_ShouldReturnNullWhenSessionIsNull() {
+        // case session null
         SessionDto sessionDto = sessionMapper.toDto((Session) null);
-
         assertNull(sessionDto);
-    }
 
-    @Test
-    void toEntity_ShouldReturnNullWhenListIsNull() {
-        List<Session> entityList = sessionMapper.toEntity((List<SessionDto>) null);
-
-        assertNull(entityList);
-    }
-
-    @Test
-    void toDto_ShouldReturnNullWhenListIsEmpty() {
-        List<SessionDto> dtoList = sessionMapper.toDto((List<Session>) null);
-
+        // case list null
+        dtoList = sessionMapper.toDto((List<Session>) null);
         assertNull(dtoList);
+    }
+
+    @Test
+    public void toDto_ShouldSetTeacherIdToNullIfThereIsNoTeacher() {
+        Session session = new Session();
+        session.setDescription("Description");
+        session.setTeacher(null);
+        session.setUsers(Arrays.asList(new User(), new User()));
+
+        SessionDto dto = sessionMapper.toDto(session);
+
+        assertNull(dto.getTeacher_id());
+        assertEquals("Description", dto.getDescription());
     }
 }

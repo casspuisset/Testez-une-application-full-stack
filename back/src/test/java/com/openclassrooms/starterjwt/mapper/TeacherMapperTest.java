@@ -2,6 +2,7 @@ package com.openclassrooms.starterjwt.mapper;
 
 import com.openclassrooms.starterjwt.dto.TeacherDto;
 import com.openclassrooms.starterjwt.models.Teacher;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -18,7 +19,7 @@ public class TeacherMapperTest {
     private TeacherMapper teacherMapper;
 
     @Test
-    void dtoToTeacher() {
+    void dtoToTeacher_AndNullIfDtoIsNull() {
         TeacherDto teacherDto = new TeacherDto();
         teacherDto.setId(1L);
         teacherDto.setFirstName("firstname");
@@ -28,10 +29,11 @@ public class TeacherMapperTest {
 
         assertNotNull(teacher);
         assertEquals(teacherDto.getId(), teacher.getId());
+        assertNull(teacherMapper.toEntity((TeacherDto) null));
     }
 
     @Test
-    void teacherToDto() {
+    void teacherToDto_ShouldReturnDtoIfTeacher_AndNullIfTeacherIsNull() {
         Teacher teacher = new Teacher();
         teacher.setId(1L);
         teacher.setFirstName("firstname");
@@ -41,6 +43,7 @@ public class TeacherMapperTest {
 
         assertNotNull(teacherDto);
         assertEquals(teacherDto.getId(), teacher.getId());
+        assertNull(teacherMapper.toDto((Teacher) null));
     }
 
     @Test
@@ -59,7 +62,7 @@ public class TeacherMapperTest {
     }
 
     @Test
-    void TeacherListToDto() {
+    void teacherListToDto() {
         Teacher teacher = new Teacher();
         teacher.setId(1L);
         teacher.setFirstName("firstname");

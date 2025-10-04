@@ -64,7 +64,7 @@ class JwtUtilsTest {
     }
 
     @Test
-    void validateJwtToken_ShouldReturnFalseWhenTokenIsExpired() {
+    void validateJwtToken_ShouldReturnFalseWhenTokenIsExpired_OrInvalid_OrNull_OrEmpty() {
         String token = Jwts.builder()
                 .setSubject("user")
                 .setIssuedAt(new Date(System.currentTimeMillis() - 120000))
@@ -73,20 +73,8 @@ class JwtUtilsTest {
                 .compact();
 
         assertFalse(jwtUtils.validateJwtToken(token));
-    }
-
-    @Test
-    void validateJwtToken_shouldReturnFalseWhenTokenIsInvalid() {
-        assertFalse(jwtUtils.validateJwtToken("invalid test"));
-    }
-
-    @Test
-    void validateJwtToken_shouldReturnFalseWhenTokenIsNull() {
+        assertFalse(jwtUtils.validateJwtToken("invalid token"));
         assertFalse(jwtUtils.validateJwtToken(null));
-    }
-
-    @Test
-    void validateJwtToken_shouldReturnFalseWhenTokenIsEmpty() {
         assertFalse(jwtUtils.validateJwtToken(""));
     }
 }

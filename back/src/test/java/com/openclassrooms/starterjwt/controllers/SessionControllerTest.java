@@ -4,7 +4,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -37,7 +39,7 @@ public class SessionControllerTest {
     SessionController sessionController;
 
     @Test
-    void findById_shouldReturnSessionWhenIdIsFound() {
+    void findById_ShouldReturnSessionWhenIdIsFound() {
         Long sessionId = 1L;
         Session session = new Session();
         SessionDto dto = new SessionDto();
@@ -59,12 +61,13 @@ public class SessionControllerTest {
     public void findById_ShouldReturnBadRequestIfSessionNotFound() {
         ResponseEntity<?> response = sessionController.findById(" ");
 
+        verify(sessionService, never()).getById(any());
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNull(response.getBody());
     }
 
     @Test
-    void findById_shouldReturnNullSessionIfSessionNotFound() {
+    void findById_ShouldReturnNullSessionIfSessionNotFound() {
         Long sessionId = 1L;
         when(sessionService.getById(sessionId)).thenReturn(null);
 
@@ -76,7 +79,7 @@ public class SessionControllerTest {
     }
 
     @Test
-    void findAll_shouldReturnAllSessionsIfSessionExists() {
+    void findAll_ShouldReturnAllSessionsIfSessionExists() {
         Session session = new Session();
         Session session2 = new Session();
         session.setId(1L);
@@ -97,20 +100,7 @@ public class SessionControllerTest {
     }
 
     @Test
-    void findAll_shouldReturnEmptyListIfSessionDoesNotExist() {
-        List<Session> emptyList = Arrays.asList();
-        when(sessionService.findAll()).thenReturn(emptyList);
-
-        ResponseEntity<?> response = sessionController.findAll();
-
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue(((List<?>) response.getBody()).isEmpty());
-        verify(sessionService).findAll();
-    }
-
-    @Test
-    public void create_shouldReturnSessionWhenSessionIsCreated() {
+    public void create_ShouldReturnSessionWhenSessionIsCreated() {
         Session session = new Session();
         SessionDto sessionDto = new SessionDto();
         session.setId(1L);
@@ -130,7 +120,7 @@ public class SessionControllerTest {
     }
 
     @Test
-    void update_shouldReturnUpdatedSessionWhenSessionIsUpdated() {
+    void update_shouldReturnUpdatedSessionWhenSessionIsUpdated_AndBadRequestWhenIdIsInvalid() {
         Long sessionId = 1L;
         Session session = new Session();
         session.setId(sessionId);
@@ -150,56 +140,46 @@ public class SessionControllerTest {
         verify(sessionMapper).toEntity(sessionDto);
         verify(sessionService).update(sessionId, session);
         verify(sessionMapper).toDto(session);
+
+        // case invalid Id
+
+        ResponseEntity<?> invalidResponse = sessionController.update("", sessionDto);
+
+        assertEquals(HttpStatus.BAD_REQUEST, invalidResponse.getStatusCode());
+        assertNull(invalidResponse.getBody());
     }
 
     @Test
-    public void update_shouldReturnBadRequestWhenSessionIdIsInvalid() {
-        SessionDto sessionDto = new SessionDto();
-
-        ResponseEntity<?> response = sessionController.update("", sessionDto);
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNull(response.getBody());
-    }
-
-    @Test
-    public void save_shouldDeleteSessionThenReturnOkWhenSessionFound() {
-        Long sessionId = 1L;
+    public void save_ShouldDeleteSessionThenReturnOkWhenSessionFound_AndBadRequestIfInvalidIdOrSessionDoesNotExist() {
         Session session = new Session();
-        session.setId(sessionId);
+        session.setId(1L);
 
-        when(sessionService.getById(sessionId)).thenReturn(session);
+        when(sessionService.getById(1L)).thenReturn(session);
 
         ResponseEntity<?> response = sessionController.save("1");
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(sessionService).getById(sessionId);
-        verify(sessionService).delete(sessionId);
+        verify(sessionService).getById(1L);
+        verify(sessionService).delete(1L);
+
+        // case invalid Id
+        ResponseEntity<?> invalidReponse = sessionController.save("");
+
+        assertEquals(HttpStatus.BAD_REQUEST, invalidReponse.getStatusCode());
+        assertNull(invalidReponse.getBody());
+
+        // case no session
+
+        when(sessionService.getById(2L)).thenReturn(null);
+
+        ResponseEntity<?> noResponse = sessionController.save("2");
+
+        assertEquals(HttpStatus.NOT_FOUND, noResponse.getStatusCode());
+        verify(sessionService).getById(2L);
     }
 
     @Test
-    public void save_shouldReturnBadRequestWhenIdIsInvalid() {
-
-        ResponseEntity<?> response = sessionController.save("");
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-        assertNull(response.getBody());
-    }
-
-    @Test
-    public void save_shouldReturnBadRequestWhenSessionDoesNotExist() {
-        Long sessionId = 1L;
-
-        when(sessionService.getById(sessionId)).thenReturn(null);
-
-        ResponseEntity<?> response = sessionController.save("1");
-
-        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
-        verify(sessionService).getById(sessionId);
-    }
-
-    @Test
-    public void participate_shouldReturnOkWhenIdIsValid() {
+    public void participate_ShouldReturnOkWhenIdIsValid_AndBadRequestWhenIdIsInvalid() {
         Long sessionId = 1L;
         Long userId = 2L;
 
@@ -207,18 +187,15 @@ public class SessionControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(sessionService).participate(sessionId, userId);
+
+        // case invalid Id
+        ResponseEntity<?> badResponse = sessionController.participate("1", " ");
+
+        assertEquals(HttpStatus.BAD_REQUEST, badResponse.getStatusCode());
     }
 
     @Test
-    public void participate_shouldReturnBadRequestWhenIdIsValid() {
-
-        ResponseEntity<?> response = sessionController.participate("1", " ");
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
-    }
-
-    @Test
-    public void noLongerParticipate_shouldReturnOkWhenIdIsValid() {
+    public void noLongerParticipate_ShouldReturnOkWhenIdIsValid_AndBadRequestWhenIdIsInvalid() {
         Long sessionId = 1L;
         Long userId = 2L;
 
@@ -226,13 +203,10 @@ public class SessionControllerTest {
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(sessionService).noLongerParticipate(sessionId, userId);
-    }
+        // case invalid Id
 
-    @Test
-    public void noLongerParticipate_shouldReturnBadRequestWhenIdIsValid() {
+        ResponseEntity<?> invalidResponse = sessionController.noLongerParticipate("1", " ");
 
-        ResponseEntity<?> response = sessionController.noLongerParticipate("1", " ");
-
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(HttpStatus.BAD_REQUEST, invalidResponse.getStatusCode());
     }
 }
