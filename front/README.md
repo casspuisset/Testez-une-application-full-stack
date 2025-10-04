@@ -22,8 +22,6 @@ Launch Front-end:
 
 ## Ressources
 
-### Mockoon env
-
 ### Postman collection
 
 For Postman import the collection
@@ -59,9 +57,10 @@ Report is available here:
 
 > front/coverage/lcov-report/index.html
 
-#### Unitary test
+#### Frontend test
 
-Launching test:
+First, launch your backend. Then, you can run your frontend tests.
+For launching test:
 
 > npm run test
 
